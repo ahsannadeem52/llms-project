@@ -1,7 +1,7 @@
 import openai
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO, emit
-import time  # To simulate real-time communication delays
+import time
 from dotenv import load_dotenv
 import os
 
@@ -21,7 +21,6 @@ def index():
 # Function to simulate a dialogue between agents in real-time
 def generate_agent_discussion(agents, topic, rounds=3):
     system_prompt = f"Agents: {', '.join(agents)}. Discuss the following topic: {topic}. Each agent will take turns responding."
-
     messages = [{"role": "system", "content": system_prompt}]
     conversation_responses = []
 
@@ -30,7 +29,6 @@ def generate_agent_discussion(agents, topic, rounds=3):
         for agent in agents:
             previous_response = conversation_responses[-1] if conversation_responses else topic
 
-            # Agent responding to the previous response
             agent_prompt = f"{agent} responds to: {previous_response}"
             messages.append({"role": "user", "content": agent_prompt})
 
@@ -38,19 +36,18 @@ def generate_agent_discussion(agents, topic, rounds=3):
                 response = openai.ChatCompletion.create(
                     model="gpt-3.5-turbo",
                     messages=messages,
-                    max_tokens=20  # Allowing shorter responses (adjust as needed)
+                    max_tokens=20  # Shorter responses
                 )
                 agent_response = response['choices'][0]['message']['content'].strip()
                 conversation_responses.append(agent_response)
 
-                # Emit each agent's response as it happens (simulating real-time communication)
+                # Emit each agent's response in real-time
                 socketio.emit('conversation_response', {
                     'agent': agent,
                     'response': agent_response
                 })
 
-                # Delay to simulate real-time conversation
-                time.sleep(1)
+                time.sleep(1)  # Simulate real-time delay
 
             except Exception as e:
                 print(f"Error in OpenAI API call: {e}")

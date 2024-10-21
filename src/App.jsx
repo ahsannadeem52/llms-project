@@ -78,7 +78,7 @@ function App() {
   };
 
   return (
-    <div className={`flex justify-between w-full h-[600px] overflow-scroll scrollbar-hidden ${darkTheme ? 'bg-black text-white' : 'bg-white text-black'}`}>
+    <div className={`flex justify-between w-full h-[680px] overflow-scroll scrollbar-hidden ${darkTheme ? 'bg-black text-white' : 'bg-white text-black'}`}>
       {sidebarVisible && (
         <div className={`text-gray-500 border ${darkTheme ? 'border-gray-400' : 'border-black'} rounded-lg m-1 p-6 w-80 h-auto overflow-scroll scrollbar-hidden`}>
           <button onClick={toggleTheme} className={`text-black ${darkTheme ? 'bg-gray-700 text-white' : 'bg-gray-300 text-black'} rounded-lg p-2 m-2 w-30`}>
