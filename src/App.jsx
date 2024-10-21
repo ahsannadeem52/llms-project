@@ -16,6 +16,7 @@ function App() {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [toxicityLevel, setToxicityLevel] = useState(0);
   const [mediatorEnabled, setMediatorEnabled] = useState(false);
+  const [conversationActive, setConversationActive] = useState(false); // New state to handle stopping
 
   const socketRef = useRef(null);
 
@@ -24,7 +25,7 @@ function App() {
 
     socketRef.current.on('conversation_response', (data) => {
       setLoading(false);
-      setConversation((prev) => [...prev, data]);  // Append each new message
+      setConversation((prev) => [...prev, data]);
     });
 
     socketRef.current.on('error', (error) => {
@@ -52,6 +53,7 @@ function App() {
 
   const handleConversation = () => {
     setLoading(true);
+    setConversationActive(true); // Activate conversation
     const dataToSend = {
       topic: topicDiscussion,
       agents: agents.map(a => `${a.name} (${a.role})`).join(', '),
@@ -64,6 +66,13 @@ function App() {
       socketRef.current.emit('start_conversation', dataToSend);
     }
     setSidebarVisible(false);
+  };
+
+  const handleStopConversation = () => {
+    setConversationActive(false); // Stop conversation
+    if (socketRef.current) {
+      socketRef.current.emit('stop_conversation');
+    }
   };
 
   const showSidebar = () => {
@@ -94,7 +103,6 @@ function App() {
             className={`w-full mb-2 ${darkTheme ? 'bg-gray-800 text-white border border-gray-400' : 'bg-gray-200 text-black border border-black'}`}
           /><br />
 
-          {/* Toxicity Level Slider */}
           <label htmlFor="toxicity">Toxicity Level ({toxicityLevel})</label>:<br />
           <input
             type="range"
@@ -105,7 +113,6 @@ function App() {
             className="w-full mb-2"
           /><br />
 
-          {/* Mediator Control Checkbox */}
           <label htmlFor="mediator">Enable Mediator</label>
           <input
             type="checkbox"
@@ -171,6 +178,12 @@ function App() {
             Start Conversation
           </button>
 
+          {conversationActive && (
+            <button onClick={handleStopConversation} className={`text-black ${darkTheme ? 'bg-gray-700 text-white' : 'bg-gray-300 text-black'} rounded-lg p-1 m-2 w-40`}>
+              Stop Conversation
+            </button>
+          )}
+
           {!sidebarVisible && (
             <button onClick={showSidebar} className={`text-black ${darkTheme ? 'bg-gray-700 text-white' : 'bg-gray-300 text-black'} rounded-lg p-1 m-2 w-40`}>
               Add Agents
@@ -185,15 +198,13 @@ function App() {
             <div>
               {conversation.map((item, index) => (
                 <div key={index} className={`flex mb-2 ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
-                  <div className={`max-w-[40%] p-2 rounded-lg mb-1 ${index % 2 === 0 ? (darkTheme ? 'bg-gray-700' : 'bg-gray-200') : (darkTheme ? 'bg-blue-800' : 'bg-blue-200')}`}>
-                    <strong>{item.agent}:</strong> {item.response}
+                  <div className={`max-w-[40%] p-2 rounded-lg mb-1 ${index % 2 === 0 ? (darkTheme ? 'bg-gray-700' : 'bg-gray-200') : (darkTheme ? 'bg-gray-500' : 'bg-gray-400')}`}>
+                    <strong>{item.agent}:</strong> {item.message}
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <p>No conversation yet.</p>
-          )}
+          ) : <p>No conversation yet.</p>}
         </div>
       </div>
     </div>

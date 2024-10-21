@@ -1,81 +1,70 @@
-import openai
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request
 from flask_socketio import SocketIO, emit
 import time
-from dotenv import load_dotenv
-import os
-
-# Load environment variables from .env file
-load_dotenv('key.env')
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Set OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Variable to control the conversation activity
+conversation_active = False
 
-# Function to generate conversation between agents
-def generate_agent_discussion(agents, topic, toxicity=0, mediator_enabled=False, rounds=3):
-    if mediator_enabled:
-        mediator = "Mediator"
-        agents.append(mediator)
-    
-    # Adjust the prompt to influence the conversation based on toxicity level
-    if toxicity >= 4:
-        system_prompt = f"Agents: {', '.join(agents)}. Discuss the following topic: {topic} in a more confrontational and critical manner."
-    elif toxicity >= 2:
-        system_prompt = f"Agents: {', '.join(agents)}. Discuss the following topic: {topic} in a balanced and neutral tone."
-    else:
-        system_prompt = f"Agents: {', '.join(agents)}. Discuss the following topic: {topic} in a polite and friendly manner."
-    
-    messages = [{"role": "system", "content": system_prompt}]
-    conversation_responses = []
+def generate_agent_response(agent, topic):
+    """
+    Generate short responses for an agent based on the topic.
+    This simulates AI agent responses.
+    """
+    responses = [
+        f"{agent} thinks {topic} is interesting.",
+        f"{agent} wants to know more about {topic}.",
+        f"{agent} agrees with the other agent on {topic}.",
+        f"{agent} is considering different perspectives on {topic}.",
+        f"{agent} raises a point about {topic}."
+    ]
+    return responses
 
-    for i in range(rounds):
+def simulate_conversation(agents, topic):
+    """
+    Simulates conversation by agents on a given topic and emits responses
+    one by one to the frontend via socket.io.
+    """
+    global conversation_active
+    while conversation_active:  # Keep the conversation going until stopped
         for agent in agents:
-            previous_response = conversation_responses[-1] if conversation_responses else topic
+            if not conversation_active:
+                break  # If conversation is stopped, exit the loop
+            responses = generate_agent_response(agent, topic)
+            for response in responses:
+                if not conversation_active:
+                    break  # Exit if conversation is stopped
+                socketio.emit('conversation_response', {"agent": agent, "message": response})
+                time.sleep(2)  # Simulate time delay for the next response
 
-            # Mediator intervention logic
-            if mediator_enabled and agent == mediator:
-                agent_prompt = f"{mediator} mediates between agents after the round."
-            else:
-                agent_prompt = f"{agent} responds to: {previous_response}"
-
-            messages.append({"role": "user", "content": agent_prompt})
-
-            try:
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=messages,
-                    max_tokens=20
-                )
-                agent_response = response['choices'][0]['message']['content'].strip()
-                conversation_responses.append(agent_response)
-
-                socketio.emit('conversation_response', {
-                    'agent': agent,
-                    'response': agent_response
-                })
-
-                time.sleep(1)
-
-            except Exception as e:
-                print(f"Error in OpenAI API call: {e}")
-                break
+@app.route("/")
+def index():
+    return "Server is running."
 
 @socketio.on('start_conversation')
-def handle_conversation(data):
-    topic = data.get('topic', '')
-    agents = data.get('agents', '').split(', ')
-    toxicity = int(data.get('toxicity', 0))  # Get the toxicity level
-    mediator = data.get('mediator', False)  # Check if mediator is enabled
-    rounds = data.get('rounds', 3)
+def start_conversation(data):
+    """
+    Handle the event to start the conversation. Receives agents and topic from the frontend
+    and starts simulating the conversation.
+    """
+    global conversation_active
+    conversation_active = True  # Set the conversation as active
 
-    if not agents or not topic:
-        emit('error', {'error': 'Please provide valid agents and topic'})
-        return
+    topic = data['topic']
+    agents = data['agents'].split(", ")
 
-    generate_agent_discussion(agents, topic, toxicity, mediator, rounds)
+    # Start the conversation in a separate process
+    simulate_conversation(agents, topic)
+
+@socketio.on('stop_conversation')
+def stop_conversation():
+    """
+    Handle the event to stop the conversation.
+    """
+    global conversation_active
+    conversation_active = False  # Stop the conversation
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
