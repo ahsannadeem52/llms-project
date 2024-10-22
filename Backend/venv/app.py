@@ -32,10 +32,16 @@ def simulate_conversation(agents, topic):
         for agent in agents:
             if not conversation_active:
                 break  # If conversation is stopped, exit the loop
+
             responses = generate_agent_response(agent, topic)
             for response in responses:
                 if not conversation_active:
                     break  # Exit if conversation is stopped
+                
+                # Emit 'typing' event before sending the message
+                socketio.emit('agent_typing', {"agent": agent})
+                time.sleep(2)  # Simulate typing delay
+
                 socketio.emit('conversation_response', {"agent": agent, "message": response})
                 time.sleep(2)  # Simulate time delay for the next response
 

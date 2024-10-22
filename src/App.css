@@ -12,6 +12,15 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+.loading-indicator {
+  font-style: italic;
+  color: gray;
+}
+.typing-indicator {
+  font-style: italic;
+  color: lightgray;
+}
+
 
 /* body {
   font-family: Arial, sans-serif;

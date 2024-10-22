@@ -11,12 +11,12 @@ function App() {
   const [showAgents, setShowAgents] = useState(false);
   const [promptMessage, setPromptMessage] = useState('');
   const [conversation, setConversation] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Typing indicator state
   const [darkTheme, setDarkTheme] = useState(true);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [toxicityLevel, setToxicityLevel] = useState(0);
   const [mediatorEnabled, setMediatorEnabled] = useState(false);
-  const [conversationActive, setConversationActive] = useState(false); // New state to handle stopping
+  const [conversationActive, setConversationActive] = useState(false);
 
   const socketRef = useRef(null);
 
@@ -24,12 +24,16 @@ function App() {
     socketRef.current = io('http://localhost:5000');
 
     socketRef.current.on('conversation_response', (data) => {
-      setLoading(false);
+      setLoading(false); // Hide typing indicator after response
       setConversation((prev) => [...prev, data]);
     });
 
+    socketRef.current.on('agent_typing', () => {
+      setLoading(true); // Show typing indicator when agent is typing
+    });
+
     socketRef.current.on('error', (error) => {
-      setLoading(false);
+      setLoading(false); // Hide typing indicator in case of error
       console.error("Socket error:", error);
     });
 
@@ -52,8 +56,8 @@ function App() {
   };
 
   const handleConversation = () => {
-    setLoading(true);
-    setConversationActive(true); // Activate conversation
+    setLoading(true); // Show typing indicator when conversation starts
+    setConversationActive(true);
     const dataToSend = {
       topic: topicDiscussion,
       agents: agents.map(a => `${a.name} (${a.role})`).join(', '),
@@ -69,7 +73,8 @@ function App() {
   };
 
   const handleStopConversation = () => {
-    setConversationActive(false); // Stop conversation
+    setConversationActive(false);
+    setLoading(false); // Stop loading when conversation is stopped
     if (socketRef.current) {
       socketRef.current.emit('stop_conversation');
     }
@@ -172,7 +177,7 @@ function App() {
             onChange={(e) => setPromptMessage(e.target.value)}
             className={`w-[50%] ${darkTheme ? 'bg-gray-800 text-white border border-gray-400' : 'bg-gray-200 text-black border border-black'}`}
             type="text"
-            placeholder='Write a project description of agent(s) to converse in round(s)' 
+            placeholder='Write a project description of agent(s) to converse in round(s)'
           /><br />
           <button onClick={handleConversation} className={`text-black ${darkTheme ? 'bg-gray-700 text-white' : 'bg-gray-300 text-black'} rounded-lg p-1 m-2 w-40`}>
             Start Conversation
@@ -192,20 +197,23 @@ function App() {
         </div>
 
         <div>
-          <h2>Conversation:</h2>
-          {loading && <p>Loading...</p>}
-          {conversation.length > 0 ? (
-            <div>
-              {conversation.map((item, index) => (
-                <div key={index} className={`flex mb-2 ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
-                  <div className={`max-w-[40%] p-2 rounded-lg mb-1 ${index % 2 === 0 ? (darkTheme ? 'bg-gray-700' : 'bg-gray-200') : (darkTheme ? 'bg-gray-500' : 'bg-gray-400')}`}>
-                    <strong>{item.agent}:</strong> {item.message}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : <p>No conversation yet.</p>}
+  <h2>Conversation:</h2>
+  {loading && <p>Typing...</p>} {/* Typing indicator here */}
+  {conversation.length > 0 ? (
+    <div>
+      {conversation.map((item, index) => (
+        <div key={index} className={`flex ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
+          <p className="mb-2 p-2 bg-gray-500 text-white rounded-lg w-fit">
+            <strong>{item.agent}</strong>: {item.message} {/* Accessing agent and message properties */}
+          </p>
         </div>
+      ))}
+    </div>
+  ) : (
+    <p>No conversation yet.</p>
+  )}
+</div>
+
       </div>
     </div>
   );
