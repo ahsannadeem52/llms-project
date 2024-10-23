@@ -12,21 +12,29 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Set OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")  # Corrected the environment variable name
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Flag to track if conversation should stop
 conversation_active = True
 
 # Function to generate conversation between agents
-def generate_agent_discussion(agent, topic, toxicity=0, mediator_enabled=False):
-    system_prompt = f"{agent} responds to the topic: {topic}."
+def generate_agent_response(agent, previous_response, topic):
+    """
+    Generates a response for an agent based on the previous agent's response.
+    """
+    # Prompt for agent to respond briefly
+    if previous_response:
+        system_prompt = f"{agent} responds briefly to the previous message: {previous_response}."
+    else:
+        system_prompt = f"{agent} responds briefly to the topic: {topic}."
+    
     messages = [{"role": "system", "content": system_prompt}]
     
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=messages,
-            max_tokens=20
+            max_tokens=10  # Set to a lower value for shorter responses
         )
         agent_response = response['choices'][0]['message']['content'].strip()
         return agent_response
@@ -38,24 +46,30 @@ def generate_agent_discussion(agent, topic, toxicity=0, mediator_enabled=False):
 # Start conversation handler
 def simulate_conversation(agents, topic):
     """
-    Simulates conversation by agents on a given topic and emits responses
-    one by one to the frontend via socket.io.
+    Simulates a discussion between agents on a given topic.
+    Each agent responds to the previous agent's response.
     """
     global conversation_active
+    previous_response = None  # This will store the last agent's response
+
     while conversation_active:
         for agent in agents:
             if not conversation_active:
                 break
 
-            # Generate OpenAI-based responses
-            response = generate_agent_discussion(agent, topic)
+            # Generate OpenAI-based response for the current agent, considering the previous agent's response
+            response = generate_agent_response(agent, previous_response, topic)
             if response and conversation_active:
                 # Emit 'typing' event before sending the message
                 socketio.emit('agent_typing', {"agent": agent})
-                time.sleep(2)
+                time.sleep(1)
 
                 # Emit the response to the frontend
                 socketio.emit('conversation_response', {"agent": agent, "message": response})
+
+                # Update the previous_response to the current agent's response for the next iteration
+                previous_response = response
+
                 time.sleep(2)
 
 

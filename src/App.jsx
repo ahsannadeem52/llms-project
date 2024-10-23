@@ -203,7 +203,7 @@ function App() {
     <div>
       {conversation.map((item, index) => (
         <div key={index} className={`flex ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
-          <p className="mb-2 p-2 bg-gray-500 text-white rounded-lg w-fit">
+          <p className="mb-2 p-2 bg-gray-500 text-white rounded-lg w-[40%]">
             <strong>{item.agent}</strong>: {item.message} {/* Accessing agent and message properties */}
           </p>
         </div>
