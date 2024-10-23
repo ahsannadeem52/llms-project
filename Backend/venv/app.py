@@ -1,68 +1,82 @@
-from flask import Flask, request
+import openai
+from flask import Flask
 from flask_socketio import SocketIO, emit
 import time
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv('key.env')
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Variable to control the conversation activity
-conversation_active = False
+# Set OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")  # Corrected the environment variable name
 
-def generate_agent_response(agent, topic):
-    """
-    Generate short responses for an agent based on the topic.
-    This simulates AI agent responses.
-    """
-    responses = [
-        f"{agent} thinks {topic} is interesting.",
-        f"{agent} wants to know more about {topic}.",
-        f"{agent} agrees with the other agent on {topic}.",
-        f"{agent} is considering different perspectives on {topic}.",
-        f"{agent} raises a point about {topic}."
-    ]
-    return responses
+# Flag to track if conversation should stop
+conversation_active = True
 
+# Function to generate conversation between agents
+def generate_agent_discussion(agent, topic, toxicity=0, mediator_enabled=False):
+    system_prompt = f"{agent} responds to the topic: {topic}."
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=20
+        )
+        agent_response = response['choices'][0]['message']['content'].strip()
+        return agent_response
+
+    except Exception as e:
+        print(f"Error in OpenAI API call: {e}")
+        return None
+
+# Start conversation handler
 def simulate_conversation(agents, topic):
     """
     Simulates conversation by agents on a given topic and emits responses
     one by one to the frontend via socket.io.
     """
     global conversation_active
-    while conversation_active:  # Keep the conversation going until stopped
+    while conversation_active:
         for agent in agents:
             if not conversation_active:
-                break  # If conversation is stopped, exit the loop
+                break
 
-            responses = generate_agent_response(agent, topic)
-            for response in responses:
-                if not conversation_active:
-                    break  # Exit if conversation is stopped
-                
+            # Generate OpenAI-based responses
+            response = generate_agent_discussion(agent, topic)
+            if response and conversation_active:
                 # Emit 'typing' event before sending the message
                 socketio.emit('agent_typing', {"agent": agent})
-                time.sleep(2)  # Simulate typing delay
+                time.sleep(2)
 
+                # Emit the response to the frontend
                 socketio.emit('conversation_response', {"agent": agent, "message": response})
-                time.sleep(2)  # Simulate time delay for the next response
+                time.sleep(2)
+
 
 @app.route("/")
 def index():
     return "Server is running."
 
+
 @socketio.on('start_conversation')
 def start_conversation(data):
     """
-    Handle the event to start the conversation. Receives agents and topic from the frontend
-    and starts simulating the conversation.
+    Handle the event to start the conversation.
     """
     global conversation_active
-    conversation_active = True  # Set the conversation as active
+    conversation_active = True
 
     topic = data['topic']
     agents = data['agents'].split(", ")
 
-    # Start the conversation in a separate process
     simulate_conversation(agents, topic)
+
 
 @socketio.on('stop_conversation')
 def stop_conversation():
@@ -70,7 +84,8 @@ def stop_conversation():
     Handle the event to stop the conversation.
     """
     global conversation_active
-    conversation_active = False  # Stop the conversation
+    conversation_active = False
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
