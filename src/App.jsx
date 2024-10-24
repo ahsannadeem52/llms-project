@@ -93,7 +93,6 @@ function App() {
 
   return (
     <div className={`flex justify-between w-full h-[680px] overflow-scroll scrollbar-hidden ${darkTheme ? 'bg-black text-white' : 'bg-white text-black'}`}>
-      {sidebarVisible && (
         <div className={`text-gray-500 border ${darkTheme ? 'border-gray-400' : 'border-black'} rounded-lg m-1 p-6 w-80 h-auto overflow-scroll scrollbar-hidden`}>
           <button onClick={toggleTheme} className={`text-black ${darkTheme ? 'bg-gray-700 text-white' : 'bg-gray-300 text-black'} rounded-lg p-2 m-2 w-30`}>
             {darkTheme ? 'Light' : 'Dark'} Theme
@@ -166,7 +165,6 @@ function App() {
             ))}
           </div>
         </div>
-      )}
 
       <div className='w-full m-1 p-3'>
         <div className='ml-[10%]'>
@@ -198,16 +196,40 @@ function App() {
 
         <div>
   <h2>Conversation:</h2>
+<<<<<<< HEAD
   {loading && <p>Typing...</p>} {/* Typing indicator here */}
+=======
+>>>>>>> 3066099 (update)
   {conversation.length > 0 ? (
     <div>
       {conversation.map((item, index) => (
         <div key={index} className={`flex ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
+<<<<<<< HEAD
           <p className="mb-2 p-2 bg-gray-500 text-white rounded-lg w-[40%]">
             <strong>{item.agent}</strong>: {item.message} {/* Accessing agent and message properties */}
           </p>
         </div>
       ))}
+=======
+          <p
+            className={`mb-2 p-2  w-[40%] ${index % 2 === 0 ? 'bg-green-300 text-black rounded-lg rounded-tl-none' : 'bg-blue-400 text-white rounded-lg rounded-tr-none'}`}
+          >
+            <strong>{item.agent}</strong>: {item.message}
+          </p>
+        </div>
+      ))}
+
+      {/* Typing indicator */}
+      {loading && (
+        <div className={`flex ${conversation.length % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
+          <p
+            className={`mb-2 p-2  w-[40%] ${conversation.length % 2 === 0 ? 'bg-green-100 text-black rounded-lg rounded-tl-none' : 'bg-blue-100 text-black rounded-lg rounded-tr-none'}`}
+          >
+            Typing...
+          </p>
+        </div>
+      )}
+>>>>>>> 3066099 (update)
     </div>
   ) : (
     <p>No conversation yet.</p>
