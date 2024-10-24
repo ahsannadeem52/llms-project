@@ -196,21 +196,10 @@ function App() {
 
         <div>
   <h2>Conversation:</h2>
-<<<<<<< HEAD
-  {loading && <p>Typing...</p>} {/* Typing indicator here */}
-=======
->>>>>>> 3066099 (update)
   {conversation.length > 0 ? (
     <div>
       {conversation.map((item, index) => (
         <div key={index} className={`flex ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
-<<<<<<< HEAD
-          <p className="mb-2 p-2 bg-gray-500 text-white rounded-lg w-[40%]">
-            <strong>{item.agent}</strong>: {item.message} {/* Accessing agent and message properties */}
-          </p>
-        </div>
-      ))}
-=======
           <p
             className={`mb-2 p-2  w-[40%] ${index % 2 === 0 ? 'bg-green-300 text-black rounded-lg rounded-tl-none' : 'bg-blue-400 text-white rounded-lg rounded-tr-none'}`}
           >
@@ -229,7 +218,6 @@ function App() {
           </p>
         </div>
       )}
->>>>>>> 3066099 (update)
     </div>
   ) : (
     <p>No conversation yet.</p>
